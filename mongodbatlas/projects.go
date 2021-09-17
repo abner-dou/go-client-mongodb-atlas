@@ -44,6 +44,7 @@ type ProjectsService interface {
 	GetOneProjectByName(context.Context, string) (*Project, *Response, error)
 	Create(context.Context, *Project, *CreateProjectOptions) (*Project, *Response, error)
 	Delete(context.Context, string) (*Response, error)
+	UpdateProjectName(context.Context, string, string) (*Project, *Response, error)
 	GetProjectTeamsAssigned(context.Context, string) (*TeamsAssigned, *Response, error)
 	AddTeamsToProject(context.Context, string, []*ProjectTeam) (*TeamsAssigned, *Response, error)
 	RemoveUserFromProject(context.Context, string, string) (*Response, error)
@@ -223,6 +224,34 @@ func (s *ProjectsServiceOp) Delete(ctx context.Context, projectID string) (*Resp
 	resp, err := s.Client.Do(ctx, req, nil)
 
 	return resp, err
+}
+
+// UpdateProjectName update project name.
+//
+// See more: https://docs.atlas.mongodb.com/reference/api/project-rename-one/
+func (s *ProjectsServiceOp) UpdateProjectName(ctx context.Context, projectID, name string) (*Project, *Response, error) {
+	if projectID == "" {
+		return nil, nil, NewArgError("projectID", "must be set")
+	}
+
+	requestObj := map[string]string{
+		"name": name,
+	}
+
+	basePath := fmt.Sprintf("%s/%s", projectBasePath, projectID)
+
+	req, err := s.Client.NewRequest(ctx, http.MethodPatch, basePath, requestObj)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(Project)
+	resp, err := s.Client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return root, resp, err
 }
 
 // GetProjectTeamsAssigned gets all the teams assigned to a project.
